@@ -11,6 +11,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   ExternalLink,
   AtSign,
   Globe,
@@ -57,6 +58,40 @@ const directoryReveal: Variants = {
   },
 };
 
+const imageFrameReveal: Variants = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.45, ease: easeOut },
+  },
+};
+
+const imageInnerReveal: Variants = {
+  hidden: { scale: 1.035 },
+  visible: {
+    scale: 1,
+    transition: { duration: 1.05, ease: easeOut },
+  },
+};
+
+const slideFromLeft: Variants = {
+  hidden: { opacity: 0, x: -72 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.82, ease: easeOut },
+  },
+};
+
+const slideFromRight: Variants = {
+  hidden: { opacity: 0, x: 72 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.82, ease: easeOut },
+  },
+};
+
 const staggerReveal: Variants = {
   hidden: {},
   visible: {
@@ -85,7 +120,15 @@ const getTargetTop = (target: HTMLElement) => {
     Number.parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue("--header-height"),
     ) || 0;
-  return Math.max(0, target.getBoundingClientRect().top + window.scrollY - headerOffset);
+  const categoryOffset =
+    target.id && target.id !== "top"
+      ? (document.querySelector<HTMLElement>(".category-strip")?.getBoundingClientRect().height ?? 0) + 42
+      : 0;
+
+  return Math.max(
+    0,
+    target.getBoundingClientRect().top + window.scrollY - headerOffset - categoryOffset,
+  );
 };
 
 const animatePageScroll = (targetTop: number) => {
@@ -96,6 +139,7 @@ const animatePageScroll = (targetTop: number) => {
 
   if (Math.abs(distance) < 2) {
     window.scrollTo(0, targetTop);
+    window.dispatchEvent(new Event("scroll"));
     return;
   }
 
@@ -113,6 +157,7 @@ const animatePageScroll = (targetTop: number) => {
     } else {
       window.scrollTo(0, targetTop);
       root.style.scrollBehavior = previousScrollBehavior;
+      window.dispatchEvent(new Event("scroll"));
     }
   };
 
@@ -127,7 +172,7 @@ function App() {
   const [activeFilter, setActiveFilter] = useState<"All" | Category>("All");
   const [query, setQuery] = useState("");
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
-  const [activeWellness, setActiveWellness] = useState("health-club-swimming");
+  const [activeWellness, setActiveWellness] = useState("inner-sight");
   const [activeGallery, setActiveGallery] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
@@ -160,6 +205,33 @@ function App() {
         initial: "hidden",
         whileInView: "visible",
         viewport: { once: true, amount: 0.08 },
+      };
+
+  const imageRevealProps = shouldReduceMotion
+    ? {}
+    : {
+        variants: imageFrameReveal,
+        initial: "hidden",
+        whileInView: "visible",
+        viewport: { once: true, amount: 0.24 },
+      };
+
+  const slideLeftProps = shouldReduceMotion
+    ? {}
+    : {
+        variants: slideFromLeft,
+        initial: "hidden",
+        whileInView: "visible",
+        viewport: { once: true, amount: 0.28 },
+      };
+
+  const slideRightProps = shouldReduceMotion
+    ? {}
+    : {
+        variants: slideFromRight,
+        initial: "hidden",
+        whileInView: "visible",
+        viewport: { once: true, amount: 0.28 },
       };
 
   useEffect(() => {
@@ -483,7 +555,7 @@ function App() {
 
         <motion.section className="intro" aria-labelledby="intro-title" {...revealProps}>
           <div className="intro-inner">
-            <div className="intro-copy">
+            <motion.div className="intro-copy" {...slideLeftProps}>
               <p className="section-label">International Club</p>
               <h2 id="intro-title">A Sanepa address made for lingering.</h2>
               <p>
@@ -497,18 +569,26 @@ function App() {
                 <span>Browse</span>
                 <span>Gather</span>
               </div>
-            </div>
-            <div className="intro-visual">
-              <figure className="intro-photo intro-photo-main">
-                <img src={assets.hokkaido} alt="Hokkaido House dining room with warm brass lighting" />
+            </motion.div>
+            <motion.div className="intro-visual" {...slideRightProps}>
+              <motion.figure className="intro-photo intro-photo-main" {...imageRevealProps}>
+                <motion.img
+                  src={assets.hokkaido}
+                  alt="Hokkaido House dining room with warm brass lighting"
+                  variants={shouldReduceMotion ? undefined : imageInnerReveal}
+                />
                 <figcaption>Dining rooms with their own character.</figcaption>
-              </figure>
-              <figure className="intro-photo intro-photo-side">
-                <img src={assets.luggageHunt} alt="The Luggage Hunt storefront beside club arches" />
+              </motion.figure>
+              <motion.figure className="intro-photo intro-photo-side" {...imageRevealProps}>
+                <motion.img
+                  src={assets.luggageHunt}
+                  alt="The Luggage Hunt storefront beside club arches"
+                  variants={shouldReduceMotion ? undefined : imageInnerReveal}
+                />
                 <figcaption>Signs, storefronts, and courtyard routes.</figcaption>
-              </figure>
+              </motion.figure>
 
-            </div>
+            </motion.div>
           </div>
         </motion.section>
 
@@ -569,20 +649,21 @@ function App() {
                     className={`business-card ${business.featured ? "featured" : ""}`}
                     key={business.id}
                   >
-                  <div className="business-image">
+                  <motion.div className="business-image" {...imageRevealProps}>
                     {business.image ? (
-                      <img
+                      <motion.img
                         src={business.image}
                         alt={business.alt}
                         loading="lazy"
                         style={{ objectPosition: business.focal }}
+                        variants={shouldReduceMotion ? undefined : imageInnerReveal}
                       />
                     ) : (
                       <div className="no-image" aria-hidden="true">
                         <span>{business.name.slice(0, 1)}</span>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                   <div className="business-body">
                     <p className="business-category">{business.categories.join(" / ")}</p>
                     <h3>{business.name}</h3>
@@ -623,37 +704,71 @@ function App() {
             <button type="button" className="text-action" onClick={() => browseFilter("Dining & Cafes")}>
               Browse Dining <ArrowRight size={17} />
             </button>
+            <div className="dining-palette" aria-label="Dining styles inside International Club">
+              <span>Japanese</span>
+              <span>Mediterranean</span>
+              <span>Pizza</span>
+              <span>Desserts</span>
+            </div>
           </div>
           <div className="dining-collage">
-            <figure className="large">
-              <img src={assets.blackGold} alt="Dining interior at The Black Gold" loading="lazy" />
+            <motion.figure className="large" {...imageRevealProps}>
+              <motion.img
+                src={assets.blackGold}
+                alt="Dining interior at The Black Gold"
+                loading="lazy"
+                variants={shouldReduceMotion ? undefined : imageInnerReveal}
+              />
               <figcaption>The Black Gold</figcaption>
-            </figure>
-            <figure>
-              <img src={assets.pizza} alt="Fire and Ice Pizzeria hanging sign" loading="lazy" />
+            </motion.figure>
+            <motion.figure {...imageRevealProps}>
+              <motion.img
+                src={assets.pizza}
+                alt="Fire and Ice Pizzeria hanging sign"
+                loading="lazy"
+                variants={shouldReduceMotion ? undefined : imageInnerReveal}
+              />
               <figcaption>Fire and Ice Pizzeria</figcaption>
-            </figure>
-            <figure>
-              <img src={assets.sweetFix} alt="Sweet Fix dessert counter" loading="lazy" />
+            </motion.figure>
+            <motion.figure {...imageRevealProps}>
+              <motion.img
+                src={assets.sweetFix}
+                alt="Sweet Fix dessert counter"
+                loading="lazy"
+                variants={shouldReduceMotion ? undefined : imageInnerReveal}
+              />
               <figcaption>Sweet Fix</figcaption>
-            </figure>
+            </motion.figure>
           </div>
         </motion.section>
 
         <motion.section className="wellness section" id="wellness" aria-labelledby="wellness-title" {...revealProps}>
           <div className="wellness-media">
-            {activeWellnessBusiness?.image ? (
-              <img
-                src={activeWellnessBusiness.image}
-                alt={activeWellnessBusiness.alt}
-                loading="lazy"
-                style={{ objectPosition: activeWellnessBusiness.focal }}
-              />
-            ) : (
-              <div className="wellness-placeholder">
-                <span>{activeWellnessBusiness?.name}</span>
-              </div>
-            )}
+            <AnimatePresence mode="wait">
+              {activeWellnessBusiness?.image ? (
+                <motion.img
+                  key={activeWellnessBusiness.id}
+                  src={activeWellnessBusiness.image}
+                  alt={activeWellnessBusiness.alt}
+                  loading="lazy"
+                  style={{ objectPosition: activeWellnessBusiness.focal }}
+                  initial={shouldReduceMotion ? false : { opacity: 0.72, scale: 1.035 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0.55, scale: 1.015 }}
+                  transition={{ duration: 0.62, ease: easeOut }}
+                />
+              ) : (
+                <motion.div
+                  key={activeWellnessBusiness?.id}
+                  className="wellness-placeholder"
+                  initial={shouldReduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0 }}
+                >
+                  <span>{activeWellnessBusiness?.name}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           <div className="wellness-copy">
             <p className="section-label">Wellness</p>
@@ -707,10 +822,14 @@ function App() {
               onClick={() => setLightbox(activeGallery)}
               aria-label={`Open larger image: ${gallery[activeGallery].caption}`}
             >
-              <img
+              <motion.img
+                key={gallery[activeGallery].src}
                 src={gallery[activeGallery].src}
                 alt={gallery[activeGallery].alt}
                 style={{ objectPosition: gallery[activeGallery].focal }}
+                initial={shouldReduceMotion ? false : { opacity: 0.72, scale: 1.035 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.55, ease: easeOut }}
               />
               <span>{gallery[activeGallery].caption}</span>
             </button>
@@ -739,7 +858,15 @@ function App() {
         </motion.section>
 
         <motion.section className="events" id="events" aria-labelledby="events-title" {...revealProps}>
-          <img src={assets.hero} alt="" loading="lazy" />
+          <motion.img
+            src={assets.hero}
+            alt=""
+            loading="lazy"
+            initial={shouldReduceMotion ? false : { scale: 1.08, opacity: 0.78 }}
+            whileInView={{ scale: 1, opacity: 0.78 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 1.35, ease: easeOut }}
+          />
           <div className="events-copy">
             <p className="section-label">Events</p>
             <h2 id="events-title">A setting to come together.</h2>
@@ -754,7 +881,7 @@ function App() {
         </motion.section>
 
         <motion.section className="visit section" id="visit" aria-labelledby="visit-title" {...revealProps}>
-          <div className="visit-copy">
+          <motion.div className="visit-copy" {...slideLeftProps}>
             <p className="section-label">Visit</p>
             <h2 id="visit-title">Find us in Sanepa.</h2>
             <p>
@@ -765,8 +892,8 @@ function App() {
               Use the directions link for a map search to the club, and check
               Instagram for current outlet updates.
             </p>
-          </div>
-          <div className="visit-panel">
+          </motion.div>
+          <motion.div className="visit-panel" {...slideRightProps}>
             <h3>International Club - Surendra Bhawan</h3>
             <p>
               <MapPin size={18} />
@@ -790,7 +917,7 @@ function App() {
               Phone, email, opening hours, and booking links were not supplied, so
               they are intentionally omitted.
             </p>
-          </div>
+          </motion.div>
         </motion.section>
 
         <motion.section className="triovate-promo" aria-labelledby="triovate-title" {...revealProps}>
@@ -874,6 +1001,23 @@ function App() {
           </figure>
         </div>
       )}
+
+      <AnimatePresence>
+        {scrolled && (
+          <motion.button
+            className="scroll-top-button"
+            type="button"
+            aria-label="Scroll to top"
+            onClick={() => scrollToSection("#top")}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 14, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={shouldReduceMotion ? undefined : { opacity: 0, y: 14, scale: 0.92 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+          >
+            <ChevronUp size={22} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 }
