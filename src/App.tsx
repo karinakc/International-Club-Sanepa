@@ -169,6 +169,11 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [wideViewport, setWideViewport] = useState(() =>
+    typeof window === "undefined"
+      ? false
+      : window.matchMedia("(min-width: 861px)").matches,
+  );
   const [activeFilter, setActiveFilter] = useState<"All" | Category>("All");
   const [query, setQuery] = useState("");
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -216,7 +221,7 @@ function App() {
         viewport: { once: true, amount: 0.24 },
       };
 
-  const slideLeftProps = shouldReduceMotion
+  const slideLeftProps = shouldReduceMotion || !wideViewport
     ? {}
     : {
         variants: slideFromLeft,
@@ -225,7 +230,7 @@ function App() {
         viewport: { once: true, amount: 0.28 },
       };
 
-  const slideRightProps = shouldReduceMotion
+  const slideRightProps = shouldReduceMotion || !wideViewport
     ? {}
     : {
         variants: slideFromRight,
@@ -249,6 +254,15 @@ function App() {
     onScroll();
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 861px)");
+    const onChange = () => setWideViewport(mediaQuery.matches);
+
+    onChange();
+    mediaQuery.addEventListener("change", onChange);
+    return () => mediaQuery.removeEventListener("change", onChange);
   }, []);
 
   useEffect(() => {
