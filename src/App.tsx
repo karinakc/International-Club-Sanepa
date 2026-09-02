@@ -180,6 +180,7 @@ function App() {
   const [activeWellness, setActiveWellness] = useState("inner-sight");
   const [activeGallery, setActiveGallery] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [heroCounts, setHeroCounts] = useState([0, 0, 0]);
   const previousFocus = useRef<HTMLElement | null>(null);
   const mobileMenuButton = useRef<HTMLButtonElement | null>(null);
 
@@ -248,6 +249,34 @@ function App() {
     const timer = window.setTimeout(() => setLoading(false), 1150);
     return () => window.clearTimeout(timer);
   }, [shouldReduceMotion]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (shouldReduceMotion) {
+      setHeroCounts([15, 7, 1]);
+      return;
+    }
+
+    const targets = [15, 7, 1];
+    const startTime = window.performance.now();
+    const duration = 1000;
+    let animationFrame = 0;
+
+    const animateCounts = (time: number) => {
+      const progress = Math.min(1, (time - startTime) / duration);
+      setHeroCounts(targets.map((target) => Math.floor(target * progress)));
+
+      if (progress < 1) {
+        animationFrame = window.requestAnimationFrame(animateCounts);
+      }
+    };
+
+    animationFrame = window.requestAnimationFrame(animateCounts);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [loading, shouldReduceMotion]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -502,16 +531,13 @@ function App() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.65, ease: "easeOut" }}
         >
-          <motion.img
-            className="hero-image"
-            src={assets.hero}
-            alt="International Club evening courtyard with illuminated white facades"
-            fetchPriority="high"
-            initial={shouldReduceMotion ? false : { scale: 1.04 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1.1, ease: easeOut }}
+          <div
+            className="hero-backdrop"
+            aria-hidden="true"
+            style={{
+              backgroundImage: `url(${assets.hero})`,
+            }}
           />
-          <div className="hero-overlay" />
           <motion.div
             className="hero-content"
             initial={shouldReduceMotion ? false : { opacity: 0, y: 28 }}
@@ -519,27 +545,34 @@ function App() {
             transition={{ duration: 0.8, delay: shouldReduceMotion ? 0 : 0.25, ease: easeOut }}
           >
             <p className="eyebrow">Surendra Bhawan . Sanepa, Lalitpur</p>
-            <h1 id="hero-title">One address. Many ways to spend the day.</h1>
-            <p>
-              Dining, wellness, shopping, and gatherings at International Club.
-            </p>
-            <div className="hero-actions">
-              <a
-                className="primary-link"
-                href="#explore"
-                onClick={(event) => handleAnchorClick(event, "#explore")}
-              >
-                Explore the Club <ArrowRight size={18} />
-              </a>
-              <a
-                className="secondary-link"
-                href="#visit"
-                onClick={(event) => handleAnchorClick(event, "#visit")}
-              >
-                Plan Your Visit
-              </a>
-            </div>
+            <h1 id="hero-title">Find your inspired club experience</h1>
           </motion.div>
+          <div className="hero-actions">
+            <a
+              className="primary-link"
+              href="#explore"
+              onClick={(event) => handleAnchorClick(event, "#explore")}
+            >
+              Explore the Club <ArrowRight size={18} />
+            </a>
+          </div>
+          <div className="hero-stats" aria-label="International Club highlights">
+            <div>
+              <strong>{heroCounts[0]}<span>+</span></strong>
+              <b>SPACES TO EXPLORE</b>
+              <p>Dining, wellness, retail, and recreation under one roof.</p>
+            </div>
+            <div>
+              <strong>{heroCounts[1]}<span>+</span></strong>
+              <b>WAYS TO UNWIND</b>
+              <p>A considered mix of places to pause, meet, and recharge.</p>
+            </div>
+            <div>
+              <strong>{heroCounts[2]}</strong>
+              <b>PLACE TO BELONG</b>
+              <p>A welcoming destination in the heart of Sanepa, Lalitpur.</p>
+            </div>
+          </div>
         </motion.section>
 
         <motion.nav
@@ -573,7 +606,7 @@ function App() {
               <p className="section-label">International Club</p>
               <h2 id="intro-title">A Sanepa address made for lingering.</h2>
               <p>
-                Move from courtyard coffee to lunch, a swim, a salon visit, or a
+                Move from courtyard coffee to lunch, a swim, a salon visit or a
                 quiet browse through the outlets. Surendra Bhawan gathers the day
                 without turning it into an itinerary.
               </p>
@@ -587,19 +620,19 @@ function App() {
             <motion.div className="intro-visual" {...slideRightProps}>
               <motion.figure className="intro-photo intro-photo-main" {...imageRevealProps}>
                 <motion.img
+                  src={assets.view}
+                  alt="View across the International Club courtyard and heritage facades"
+                  variants={shouldReduceMotion ? undefined : imageInnerReveal}
+                />
+                <figcaption>A courtyard view across Surendra Bhawan.</figcaption>
+              </motion.figure>
+              <motion.figure className="intro-photo intro-photo-side" {...imageRevealProps}>
+                <motion.img
                   src={assets.hokkaido}
                   alt="Hokkaido House dining room with warm brass lighting"
                   variants={shouldReduceMotion ? undefined : imageInnerReveal}
                 />
                 <figcaption>Dining rooms with their own character.</figcaption>
-              </motion.figure>
-              <motion.figure className="intro-photo intro-photo-side" {...imageRevealProps}>
-                <motion.img
-                  src={assets.luggageHunt}
-                  alt="The Luggage Hunt storefront beside club arches"
-                  variants={shouldReduceMotion ? undefined : imageInnerReveal}
-                />
-                <figcaption>Signs, storefronts, and courtyard routes.</figcaption>
               </motion.figure>
 
             </motion.div>
@@ -712,7 +745,7 @@ function App() {
             <p className="section-label">Dining</p>
             <h2 id="dining-title">Stay for another course.</h2>
             <p>
-              Japanese cuisine, Mediterranean dining, pizza, cafes, and something
+              Japanese cuisine, Mediterranean dining, pizza, cafes and something
               sweet, all within the club.
             </p>
             <button type="button" className="text-action" onClick={() => browseFilter("Dining & Cafes")}>
@@ -900,10 +933,10 @@ function App() {
             <h2 id="visit-title">Find us in Sanepa.</h2>
             <p>
               International Club - Surendra Bhawan brings eateries, wellness,
-              retail, and gathering spaces together in Lalitpur.
+              retail and gathering spaces together in Lalitpur.
             </p>
             <p>
-              Use the directions link for a map search to the club, and check
+              Use the directions link for a map search to the club and check
               Instagram for current outlet updates.
             </p>
           </motion.div>
@@ -928,7 +961,7 @@ function App() {
               <AtSign size={17} /> @internationalclub.np
             </a>
             <p className="note">
-              Phone, email, opening hours, and booking links were not supplied, so
+              Phone, email, opening hours and booking links were not supplied, so
               they are intentionally omitted.
             </p>
           </motion.div>

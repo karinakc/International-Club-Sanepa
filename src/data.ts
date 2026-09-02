@@ -16,6 +16,7 @@ import pizza from "./assets/pizza.jpg";
 import silk from "./assets/silk.webp";
 import sweetFix from "./assets/sweet-fix.webp";
 import swimmingPool from "./assets/swimmingpool.jpg";
+import view from "./assets/view.png";
 
 export type Category =
   | "Dining & Cafes"
@@ -55,6 +56,7 @@ export const assets = {
   silk,
   sweetFix,
   swimmingPool,
+  view,
 };
 
 export const filters: Array<"All" | Category> = [
